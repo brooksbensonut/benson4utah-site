@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Brooks Benson — Convention Booth Video Wall (1152×768)</title>
+<meta name="viewport" content="width=1152, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+<!--
+  CANVAS:           1152 × 768 (3:2) — native pixel size of the booth video wall.
+  AUTO-SCALE:       JS scales the stage to fill any host display while preserving 3:2.
+  LEGIBILITY MATH:  Designed for 12–15 ft viewing. Worst-case ~20 px/inch displays:
+                    cap height 1.5 in @ 15 ft = 30 px → font-size ≈ 43 px (cap=0.7×).
+                    Body min 36 px • subhead 64–80 px • headline 110–160 px • hero 180–220 px.
+  MOTION:           Background MP4 footage from /footage/ if present; otherwise rich
+                    CSS motion (Ken Burns stills, animated gradient sky, parallax peaks,
+                    drifting stars, kinetic typography). Loop 80–95 s, varied pacing.
+-->
+<style>
+  :root{
+    --navy:#1e3a5f;
+    --navy-deep:#142845;
+    --navy-darker:#0c1a2e;
+    --red:#c41e3a;
+    --red-bright:#e02645;
+    --silver:#8b9dc3;
+    --gold:#d4af37;
+    --gold-bright:#f0c850;
+    --green:#2d5a27;
+    --white:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Montserrat',sans-serif;color:#fff}
+
+  /* 1152×768 stage, scaled to fit any display while preserving 3:2 */
+  .stage{
+    position:fixed;left:50%;top:50%;
+    width:1152px;height:768px;
+    transform:translate(-50%,-50%);
+    transform-origin:center center;
+    background:#000;
+    overflow:hidden;
+  }
+
+  .slide{
+    position:absolute;inset:0;
+    opacity:0;visibility:hidden;
+    transition:opacity 900ms ease-in-out;
+    will-change:opacity;
+  }
+  .slide.active{opacity:1;visibility:visible}
+
+  /* ========= BACKGROUND VIDEO LAYER ========= */
+  .bg-video{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    filter:saturate(1.05) contrast(1.05);
+  }
+  /* Dark gradient scrim so white type is always legible */
+  .scrim{
+    position:absolute;inset:0;
+    background:
+      linear-gradient(180deg, rgba(12,26,46,.65) 0%, rgba(12,26,46,.35) 35%, rgba(12,26,46,.85) 100%),
+      linear-gradient(90deg, rgba(12,26,46,.85) 0%, rgba(12,26,46,.10) 55%);
+  }
+  .scrim-center{
+    position:absolute;inset:0;
+    background:radial-gradient(ellipse at center, rgba(12,26,46,.35) 0%, rgba(12,26,46,.85) 100%);
+  }
+
+  /* ========= CSS-ONLY MOTION (fallback / always-on backdrop) ========= */
+  .css-bg{
+    position:absolute;inset:0;overflow:hidden;
+    background:linear-gradient(180deg, #1a3258 0%, #0c1a2e 100%);
+  }
+  .sky{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse at 70% 0%, rgba(212,175,55,.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 20% 30%, rgba(196,30,58,.15) 0%, transparent 50%),
+      linear-gradient(180deg, #1f3a64 0%, #142845 60%, #0c1a2e 100%);
+    animation:skydrift 22s ease-in-out infinite alternate;
+  }
+  @keyframes skydrift{
+    0%{filter:hue-rotate(0deg) brightness(1)}
+    100%{filter:hue-rotate(-8deg) brightness(1.08)}
+  }
+  /* Stars (tiny dots animated) */
+  .stars{position:absolute;inset:0;opacity:.6;
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 32% 42%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 58% 14%, #fff 50%, transparent 51%),
+      radial-gradient(1.4px 1.4px at 78% 36%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 88% 8%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 45% 28%, #fff 50%, transparent 51%);
+    animation:twinkle 11s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle{0%{opacity:.3}100%{opacity:.85}}
+  /* Distant + near mountain parallax */
+  .ridge-far,.ridge-near{
+    position:absolute;left:-10%;right:-10%;bottom:0;height:55%;
+    background-repeat:no-repeat;background-position:center bottom;background-size:120% 100%;
+  }
+  .ridge-far{
+    height:38%;opacity:.65;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 240' preserveAspectRatio='none'><polygon fill='%23284a78' points='0,240 0,150 90,90 200,140 320,60 460,150 600,80 740,160 880,70 1020,140 1140,90 1200,150 1200,240'/></svg>");
+    animation:driftFar 22s linear infinite alternate;
+  }
+  .ridge-near{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300' preserveAspectRatio='none'><polygon fill='%23142845' points='0,300 0,200 120,120 240,200 380,80 520,210 700,140 860,220 1020,150 1160,210 1200,180 1200,300'/></svg>");
+    animation:driftNear 22s linear infinite alternate;
+  }
+  @keyframes driftFar{0%{transform:translateX(0)}100%{transform:translateX(-3%)}}
+  @keyframes driftNear{0%{transform:translateX(0)}100%{transform:translateX(2.5%)}}
+  /* Rolling light flare */
+  .flare{
+    position:absolute;top:-20%;left:-30%;width:60%;height:140%;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.12) 0%, transparent 60%);
+    transform:rotate(20deg);animation:flare 22s ease-in-out infinite;
+  }
+  @keyframes flare{
+    0%{transform:translateX(0) rotate(20deg)}
+    50%{transform:translateX(180%) rotate(20deg)}
+    100%{transform:translateX(360%) rotate(20deg)}
+  }
+
+  /* ========= BRAND CHROME =========
+     Layout (top → bottom):
+       y=0–34  : ticker (very top, seamless infinite scroll)
+       y=34–40 : tri-color stripe
+       y=40–704: content area (664 px)
+       y=704–768: brand-bar footer (B logo, name, URL) + slim progress strip   */
+  .chrome-top{
+    position:absolute;top:34px;left:0;right:0;height:6px;z-index:5;
+    background:linear-gradient(90deg,var(--red) 0%, var(--red) 33.3%, #fff 33.3%, #fff 66.6%, var(--navy) 66.6%);
+  }
+  /* Two-rail footer: brand left, district label right. Flex space-between
+     with white-space:nowrap on each child — browser enforces no-overlap. */
+  .brand-bar{
+    position:absolute;left:0;right:0;bottom:0;height:64px;z-index:5;
+    background:rgba(12,26,46,.94);
+    border-top:3px solid var(--gold);
+    display:flex;align-items:center;justify-content:space-between;
+    column-gap:32px;padding:0 40px;
+  }
+  .b-mark{display:flex;align-items:center;gap:16px;min-width:0}
+  .b-circle{
+    flex-shrink:0;
+    width:46px;height:46px;border-radius:50%;
+    background:var(--red);color:#fff;font-weight:900;font-size:26px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .b-name{font-weight:800;font-size:26px;letter-spacing:.05em;color:#fff;white-space:nowrap}
+  .b-tag-right{
+    font-weight:800;font-size:26px;letter-spacing:.20em;color:var(--gold-bright);
+    text-transform:uppercase;white-space:nowrap;
+  }
+
+  /* Slim progress strip along the bottom edge of the footer brand-bar */
+  .progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.08);z-index:6}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold) 0%, var(--gold-bright) 100%);width:0%;transition:width 100ms linear}
+
+  /* ========= CONTENT — left rail layout (text out of busy footage center) =========
+     Content area: y=40 (below ticker+stripe) to y=704 (above brand-bar footer). */
+  .panel{
+    position:absolute;left:0;top:40px;bottom:64px;
+    width:62%;
+    padding:50px 40px 30px 64px;
+    display:flex;flex-direction:column;justify-content:center;
+    z-index:3;
+  }
+  .panel.right{left:auto;right:0;width:62%}
+  .panel.full{width:100%;align-items:flex-start}
+  .panel.center{width:100%;align-items:center;text-align:center;padding:60px}
+
+  /* Animated reveal classes — applied when slide is active */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity 700ms ease, transform 700ms ease}
+  .slide.active .reveal{opacity:1;transform:translateY(0)}
+  .slide.active .reveal.d1{transition-delay:200ms}
+  .slide.active .reveal.d2{transition-delay:450ms}
+  .slide.active .reveal.d3{transition-delay:700ms}
+  .slide.active .reveal.d4{transition-delay:950ms}
+
+  /* Typography (sized for 1152×768 + 12–15 ft viewing) */
+  .eyebrow{
+    color:var(--gold);font-weight:700;letter-spacing:.42em;font-size:22px;
+    margin-bottom:18px;text-shadow:0 2px 8px rgba(0,0,0,.6);
+  }
+  .h-hero{
+    font-weight:900;font-size:148px;line-height:.9;letter-spacing:-.012em;
+    color:#fff;text-shadow:0 4px 22px rgba(0,0,0,.55);
+  }
+  .h-hero .red{color:var(--red-bright)}
+  .h-1{
+    font-weight:900;font-size:118px;line-height:.92;letter-spacing:-.005em;color:#fff;
+    text-shadow:0 4px 18px rgba(0,0,0,.55);
+  }
+  .h-1 .accent{color:var(--red-bright)}
+  .h-2{
+    font-weight:800;font-size:62px;line-height:1.04;color:#fff;letter-spacing:.01em;
+    text-shadow:0 3px 14px rgba(0,0,0,.55);
+  }
+  .lede{
+    margin-top:22px;font-weight:600;font-size:36px;line-height:1.25;color:#fff;
+    text-shadow:0 2px 10px rgba(0,0,0,.55);max-width:640px;
+  }
+  .lede.wide{max-width:980px}
+  .body{
+    margin-top:18px;font-family:'Source Sans Pro',sans-serif;font-weight:400;
+    font-size:24px;line-height:1.4;color:#e7eef9;max-width:640px;
+    text-shadow:0 1px 6px rgba(0,0,0,.6);
+  }
+  .rule{height:5px;width:120px;background:var(--red-bright);margin:18px 0;border-radius:2px}
+  .sub-cta{margin-top:24px;font-weight:600;font-size:22px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase}
+
+  /* Stat cards */
+  .stats{display:flex;gap:18px;margin-top:30px}
+  .stat{
+    background:rgba(12,26,46,.65);backdrop-filter:blur(4px);
+    border-left:4px solid var(--gold);padding:14px 20px;border-radius:3px;min-width:160px;
+  }
+  .stat .num{font-weight:900;font-size:64px;color:var(--gold-bright);line-height:1}
+  .stat .lbl{margin-top:6px;font-size:20px;letter-spacing:.14em;color:#fff;text-transform:uppercase;font-weight:700}
+
+  /* Pillars grid */
+  .pillars{
+    position:absolute;left:48px;right:48px;top:172px;bottom:80px;z-index:3;
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:14px;
+  }
+  .pillars-title{
+    position:absolute;top:54px;left:48px;right:48px;z-index:3;
+  }
+  .pillars-title .eyebrow{margin-bottom:10px}
+  .pillars-title .h-2{font-size:42px;line-height:1.05}
+  .pillar{
+    background:linear-gradient(180deg, rgba(20,40,69,.85), rgba(12,26,46,.92));
+    border-top:4px solid var(--gold);border-radius:4px;
+    padding:18px 18px 16px;display:flex;flex-direction:column;
+  }
+  .pillar .ic{
+    width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;font-weight:900;font-size:18px;
+    display:flex;align-items:center;justify-content:center;margin-bottom:8px;
+  }
+  .pillar h3{font-weight:800;font-size:28px;color:#fff;margin-bottom:8px;letter-spacing:.02em}
+  .pillar p{font-family:'Source Sans Pro';font-weight:600;font-size:28px;line-height:1.32;color:#e7eef9}
+
+  /* CTA / Closing slide layout */
+  .cta-wrap{position:absolute;inset:40px 0 64px 0;display:flex;align-items:center;justify-content:center;z-index:3;flex-direction:column;text-align:center;padding:30px 60px}
+  .cta-wrap .h-1{font-size:124px}
+  .qr-row{display:flex;align-items:center;gap:30px;margin-top:30px}
+  .qr{width:172px;height:172px;background:#fff;padding:10px;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .qr img{width:100%;height:100%;display:block}
+  .qr-text{text-align:left}
+  .qr-text .url{font-weight:800;font-size:42px;color:var(--gold);letter-spacing:.03em}
+  .qr-text .label{font-weight:700;font-size:15px;color:#fff;letter-spacing:.28em;margin-top:6px;text-transform:uppercase}
+  .qr-text .phone{margin-top:6px;font-size:20px;color:var(--silver);letter-spacing:.12em}
+
+  /* Hero photo frame (right side) — sized to NOT overlap left text panel */
+  .hero-photo{
+    position:absolute;right:0;top:40px;bottom:64px;width:42%;z-index:2;
+    background:url("/images/brooks-outside.webp") center/cover no-repeat;
+    clip-path:polygon(14% 0, 100% 0, 100% 100%, 0% 100%);
+    animation:kenburns 22s ease-in-out infinite alternate;
+  }
+  @keyframes kenburns{
+    0%{transform:scale(1.0) translate(0,0)}
+    100%{transform:scale(1.08) translate(-1.5%, -1.2%)}
+  }
+  .star-rail{position:absolute;left:-2px;top:0;bottom:0;width:6px;background:var(--red);z-index:3}
+
+  /* Family quote slide — lower-third band keeps the family fully visible. */
+  .quote-photo{position:absolute;top:40px;bottom:64px;left:0;right:0;background:url("/images/brooks-family.webp") center/cover no-repeat;z-index:1;animation:kenburns 22s ease-in-out infinite alternate}
+  .quote-band{
+    position:absolute;left:0;right:0;bottom:64px;height:230px;z-index:3;
+    background:linear-gradient(180deg, rgba(12,26,46,0) 0%, rgba(12,26,46,.55) 22%, rgba(12,26,46,.92) 100%);
+    display:flex;align-items:flex-end;
+  }
+  .quote-content{
+    width:100%;padding:0 80px 28px;
+    display:grid;grid-template-columns:auto 1fr;column-gap:28px;row-gap:14px;
+  }
+  .quote-mark-inline{
+    grid-row:1/3;align-self:end;
+    font-family:'Montserrat';font-weight:900;font-size:140px;color:var(--red-bright);
+    line-height:.7;text-shadow:0 4px 14px rgba(0,0,0,.6);
+  }
+  .quote-text{
+    align-self:end;
+    font-weight:700;font-size:36px;line-height:1.2;color:#fff;
+    text-shadow:0 2px 10px rgba(0,0,0,.85);
+  }
+  .quote-attr{
+    font-weight:700;font-size:22px;letter-spacing:.28em;color:var(--gold-bright);
+    text-transform:uppercase;
+  }
+
+  /* Ticker — pinned to the very top of the screen, seamless infinite scroll.
+     Items are duplicated 2× and each item carries its own padding-right so the
+     gap between item 8 → item 9 equals the gap everywhere else. The keyframe
+     translates exactly -50% (one full set), so the wrap is invisible.        */
+  .ticker{
+    position:absolute;left:0;right:0;top:0;height:34px;z-index:6;
+    background:linear-gradient(90deg, var(--red) 0%, #a01830 100%);
+    overflow:hidden;display:flex;align-items:center;
+    border-bottom:1px solid rgba(0,0,0,.35);
+  }
+  .ticker-track{
+    display:flex;flex-wrap:nowrap;white-space:nowrap;
+    animation:tickerScroll 22s linear infinite;
+    font-weight:800;font-size:18px;letter-spacing:.22em;color:#fff;text-transform:uppercase;
+    will-change:transform;
+  }
+  .ticker-item{flex-shrink:0;padding-right:56px}
+  .ticker-item::before{content:"★ ";color:var(--gold-bright);margin-right:10px}
+  @keyframes tickerScroll{
+    from{transform:translateX(0)}
+    to{transform:translateX(-50%)}
+  }
+
+  /* Vote-meter / kinetic accent on CTA slide */
+  .convention-badge{
+    margin-top:18px;
+    display:inline-block;padding:12px 30px;
+    background:var(--red);color:#fff;font-weight:900;letter-spacing:.32em;font-size:22px;
+    border:3px solid var(--gold);border-radius:4px;
+    animation:pulse 2.6s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,.6)}50%{box-shadow:0 0 0 18px rgba(212,175,55,0)}}
+
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- ============ SLIDE 1 — HERO ============ -->
+  <section class="slide active" data-bg="01-utah-aerial.mp4">
+    <div class="css-bg"><div class="sky"></div><div class="stars"></div><div class="ridge-far"></div><div class="ridge-near"></div><div class="flare"></div></div>
+    <video class="bg-video" autoplay muted loop playsinline data-src="footage/01-utah-aerial.mp4" preload="auto" style="display:none"></video>
+    <div class="scrim"></div>
+    <div class="hero-photo"><div class="star-rail"></div></div>
+
+    <div class="panel" style="width:58%">
+      <div class="eyebrow reveal">UTAH SENATE • DISTRICT 11</div>
+      <div class="h-hero reveal d1">BROOKS<br><span class="red">BENSON</span></div>
+      <div class="rule reveal d2"></div>
+      <div class="h-2 reveal d2">NEW ENERGY.<br>PROVEN VALUES.</div>
+      <div class="sub-cta reveal d3" style="font-size:18px;letter-spacing:.14em">Tooele • Eagle Mountain • Herriman</div>
+    </div>
+    <div class="chrome-top"></div>
+  </section>
+
+  <!-- ============ SLIDE 2 — INFRASTRUCTURE FIRST ============ -->
+  <section class="slide" data-bg="02-highway.mp4">
+    <div class="css-bg"><div class="sky"></div><div class="ridge-far"></div><div class="ridge-near"></div><div class="flare"></div></div>
+    <video class="bg-video" autoplay muted loop playsinline data-src="footage/02-highway.mp4" preload="auto" style="display:none"></video>
+    <div class="scrim"></div>
+
+    <div class="panel full" style="padding:50px 64px 30px">
+      <div class="eyebrow reveal">WHY I'M RUNNING</div>
+      <div class="h-1 reveal d1">Infrastructure <span class="accent">First.</span></div>
+      <div class="lede wide reveal d2">Houses are going up faster than the roads, schools, and water that serve them. That's not growth — that's debt to our kids.</div>
+      <div class="stats reveal d3">
+        <div class="stat"><div class="num">45K</div><div class="lbl">Cars / Day SR-36</div></div>
+        <div class="stat"><div class="num">60–90</div><div class="lbl">Min Commutes</div></div>
+        <div class="stat"><div class="num">#1</div><div class="lbl">Fastest-Growing</div></div>
+      </div>
+    </div>
+    <div class="chrome-top"></div>
+  </section>
+
+  <!-- ============ SLIDE 3 — SIX PILLARS ============ -->
+  <section class="slide" data-bg="03-flag.mp4">
+    <div class="css-bg"><div class="sky"></div><div class="ridge-far"></div><div class="ridge-near"></div></div>
+    <video class="bg-video" autoplay muted loop playsinline data-src="footage/03-flag.mp4" preload="auto" style="display:none"></video>
+    <div class="scrim-center"></div>
+
+    <div class="pillars-title">
+      <div class="eyebrow reveal">WHERE I STAND</div>
+      <div class="h-2 reveal d1">Conservative Values. <span style="color:var(--red-bright)">Local Priorities.</span></div>
+    </div>
+    <div class="pillars">
+      <div class="pillar reveal d1"><div class="ic">★</div><h3>LOCAL CONTROL</h3><p>Tooele decides how Tooele grows — not the Wasatch Front.</p></div>
+      <div class="pillar reveal d1"><div class="ic">★</div><h3>FAMILY FIRST</h3><p>Every policy decision starts with Utah families.</p></div>
+      <div class="pillar reveal d2"><div class="ic">★</div><h3>SR-36 & ROADS</h3><p>Fix our roads before growth outpaces them.</p></div>
+      <div class="pillar reveal d2"><div class="ic">★</div><h3>WATER RIGHTS</h3><p>Protect the aquifer. No rubber-stamp approvals.</p></div>
+      <div class="pillar reveal d3"><div class="ic">★</div><h3>ENERGY</h3><p>All of the above. Open the market. Lower bills.</p></div>
+      <div class="pillar reveal d3"><div class="ic">★</div><h3>FISCAL DISCIPLINE</h3><p>Taxpayers first. Developers pay for growth.</p></div>
+    </div>
+    <div class="chrome-top"></div>
+  </section>
+
+  <!-- ============ SLIDE 4 — ENERGY ============ -->
+  <section class="slide" data-bg="04-energy.mp4">
+    <div class="css-bg"><div class="sky"></div><div class="stars"></div><div class="ridge-far"></div><div class="ridge-near"></div><div class="flare"></div></div>
+    <video class="bg-video" autoplay muted loop playsinline data-src="footage/04-energy.mp4" preload="auto" style="display:none"></video>
+    <div class="scrim"></div>
+
+    <div class="panel full" style="padding:60px 64px 30px">
+      <div class="eyebrow reveal">ENERGY INDEPENDENCE</div>
+      <div class="h-1 reveal d1">Lower Costs. <span class="accent">Utah Power.</span></div>
+      <div class="lede wide reveal d2">An all-of-the-above strategy — natural gas, solar, wind, and small modular nuclear. Free-market competition to break the monopoly and lower the bills Utah families pay.</div>
+    </div>
+    <div class="chrome-top"></div>
+  </section>
+
+  <!-- ============ SLIDE 5 — WATER ============ -->
+  <section class="slide" data-bg="05-water.mp4">
+    <div class="css-bg"><div class="sky"></div><div class="ridge-far"></div><div class="ridge-near"></div></div>
+    <video class="bg-video" autoplay muted loop playsinline data-src="footage/05-water.mp4" preload="auto" style="display:none"></video>
+    <div class="scrim"></div>
+
+    <div class="panel full" style="padding:60px 64px 30px">
+      <div class="eyebrow reveal">WATER SECURITY</div>
+      <div class="h-1 reveal d1">Protect the <span class="accent">Aquifer.</span></div>
+      <div class="lede wide reveal d2">Tooele's future depends on the water beneath our feet. No more rubber-stamp approvals that ignore capacity. Real audits. Real limits. Real accountability.</div>
+    </div>
+    <div class="chrome-top"></div>
+  </section>
+
+  <!-- ============ SLIDE 6 — FAMILY QUOTE (lower-third) ============ -->
+  <section class="slide" data-bg="06-family.mp4">
+    <div class="quote-photo"></div>
+
+    <div class="quote-band">
+      <div class="quote-content">
+        <div class="quote-mark-inline reveal">"</div>
+        <div class="quote-text reveal d1">I'm running for the same reason you became a delegate — because Utah's future is worth fighting for.</div>
+        <div class="quote-attr reveal d2">— Brooks Benson</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — ABOUT BROOKS ============ -->
+  <section class="slide" data-bg="07-utah-evening.mp4">
+    <div class="css-bg"><div class="sky"></div><div class="stars"></div><div class="ridge-far"></div><div class="ridge-near"></div><div class="flare"></div></div>
+    <video class="bg-video" autoplay muted loop playsinline data-src="footage/07-utah-evening.mp4" preload="auto" style="display:none"></video>
+    <div class="scrim"></div>
+
+    <div class="panel full" style="padding:60px 64px 30px">
+      <div class="eyebrow reveal">ABOUT BROOKS</div>
+      <div class="h-1 reveal d1">One of <span class="accent">Us.</span></div>
+      <div class="lede wide reveal d2">Husband. Father. UVU graduate. Business consultant with 18 years in operations and infrastructure.</div>
+      <div class="body reveal d3" style="max-width:920px;font-size:26px">No developer ties. No political baggage. Just common-sense conservative values and the energy to actually fight for District 11 at the Capitol.</div>
+    </div>
+    <div class="chrome-top"></div>
+  </section>
+
+  <!-- ============ SLIDE 8 — CTA / VOTE ============ -->
+  <section class="slide" data-bg="08-capitol.mp4">
+    <div class="css-bg"><div class="sky"></div><div class="stars"></div><div class="ridge-far"></div><div class="ridge-near"></div><div class="flare"></div></div>
+    <video class="bg-video" autoplay muted loop playsinline data-src="footage/08-capitol.mp4" preload="auto" style="display:none"></video>
+    <div class="scrim-center"></div>
+
+    <div class="cta-wrap">
+      <div class="eyebrow reveal" style="font-size:22px">AT THE STATE CONVENTION</div>
+      <div class="h-1 reveal d1" style="font-size:96px;text-align:center;line-height:1">Vote <span class="accent">Brooks Benson</span></div>
+      <div class="rule reveal d2" style="margin:14px auto;background:var(--gold)"></div>
+      <div class="lede reveal d2" style="text-align:center;max-width:820px;font-size:26px;margin-top:6px">Your delegate vote carries the weight of your entire precinct. I'd love to talk about what matters most to you.</div>
+      <div class="qr-row reveal d3" style="margin-top:22px">
+        <div class="qr"><img src="/designs/print-ready/qr-website.png" alt="brooksbenson4utah.com"></div>
+        <div class="qr-text">
+          <div class="url">brooksbenson4utah.com</div>
+          <div class="label">Issues • Bio • Get Involved</div>
+          <div class="phone">(805) 746-6758</div>
+        </div>
+      </div>
+    </div>
+    <div class="chrome-top"></div>
+  </section>
+
+  <!-- Top-mounted seamless infinite ticker.
+       Items appear twice; the keyframe translates exactly -50%, so when the
+       animation wraps it is showing the duplicated set in the same position
+       the original set started in — zero blank space, zero seam.            -->
+  <div class="ticker">
+    <div class="ticker-track">
+      <span class="ticker-item">NEW ENERGY FOR UTAH</span>
+      <span class="ticker-item">INFRASTRUCTURE FIRST</span>
+      <span class="ticker-item">PROTECT THE AQUIFER</span>
+      <span class="ticker-item">LOCAL CONTROL</span>
+      <span class="ticker-item">FAMILY FIRST</span>
+      <span class="ticker-item">BROOKSBENSON4UTAH.COM</span>
+      <span class="ticker-item">VOTE BROOKS BENSON</span>
+      <span class="ticker-item">UTAH SENATE • DISTRICT 11</span>
+      <!-- duplicate set — keep identical to the block above -->
+      <span class="ticker-item" aria-hidden="true">NEW ENERGY FOR UTAH</span>
+      <span class="ticker-item" aria-hidden="true">INFRASTRUCTURE FIRST</span>
+      <span class="ticker-item" aria-hidden="true">PROTECT THE AQUIFER</span>
+      <span class="ticker-item" aria-hidden="true">LOCAL CONTROL</span>
+      <span class="ticker-item" aria-hidden="true">FAMILY FIRST</span>
+      <span class="ticker-item" aria-hidden="true">BROOKSBENSON4UTAH.COM</span>
+      <span class="ticker-item" aria-hidden="true">VOTE BROOKS BENSON</span>
+      <span class="ticker-item" aria-hidden="true">UTAH SENATE • DISTRICT 11</span>
+    </div>
+  </div>
+
+  <!-- Persistent footer brand bar (bottom of screen) -->
+  <div class="brand-bar">
+    <div class="b-mark">
+      <div class="b-circle">B</div>
+      <div class="b-name">BROOKS BENSON</div>
+    </div>
+    <div class="b-tag-right">UTAH SENATE • DISTRICT 11</div>
+    <div class="progress"><div class="progress-fill" id="pfill"></div></div>
+  </div>
+
+</div>
+
+<script>
+  // ===== Auto-fit 1152×768 stage to host display, preserve 3:2 =====
+  function fitStage(){
+    const st = document.getElementById('stage');
+    const sx = window.innerWidth / 1152;
+    const sy = window.innerHeight / 768;
+    const s = Math.min(sx, sy);
+    st.style.transform = `translate(-50%,-50%) scale(${s})`;
+  }
+  window.addEventListener('resize', fitStage);
+  fitStage();
+
+  // ===== Activate background video only if file exists in /footage =====
+  // Probes via HEAD; falls back silently to CSS-only motion otherwise.
+  document.querySelectorAll('video.bg-video').forEach(v => {
+    const src = v.getAttribute('data-src');
+    fetch(src, {method:'HEAD'}).then(r => {
+      if(r.ok){
+        v.src = src;
+        v.style.display = 'block';
+        v.play().catch(()=>{});
+      }
+    }).catch(()=>{});
+  });
+
+  // ===== Slide loop with progress + per-slide dwell =====
+  const slides = document.querySelectorAll('.slide');
+  // Dwell ms: hero longer, content medium, CTA longest so people can scan QR
+  const dwell = [9000, 11000, 13000, 10000, 10000, 11000, 11000, 13000];
+  let i = 0, t0 = performance.now(), raf;
+  const fill = document.getElementById('pfill');
+
+  function show(n){
+    slides.forEach(s => s.classList.remove('active'));
+    slides[n].classList.add('active');
+    t0 = performance.now();
+  }
+  function tick(){
+    const now = performance.now();
+    const elapsed = now - t0;
+    const p = Math.min(100, (elapsed / dwell[i]) * 100);
+    fill.style.width = p + '%';
+    if(elapsed >= dwell[i]){
+      i = (i + 1) % slides.length;
+      show(i);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  show(0); tick();
+
+  // ===== Booth controls =====
+  document.addEventListener('click', () => { i = (i+1) % slides.length; show(i); });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight' || e.key === ' '){ i = (i+1) % slides.length; show(i); }
+    if(e.key === 'ArrowLeft'){ i = (i-1+slides.length) % slides.length; show(i); }
+    if(e.key === 'f' || e.key === 'F'){ document.documentElement.requestFullscreen?.(); }
+  });
+
+  // ===== Hide cursor after idle =====
+  let ct;
+  document.addEventListener('mousemove', () => {
+    document.body.style.cursor = 'default';
+    clearTimeout(ct);
+    ct = setTimeout(() => document.body.style.cursor = 'none', 2500);
+  });
+</script>
+</body>
+</html>

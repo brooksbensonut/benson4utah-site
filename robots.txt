@@ -1,0 +1,20 @@
+# robots.txt for Brooks Benson for Utah Senate
+User-agent: *
+Allow: /
+Disallow: /booth-wall-bb26/
+
+# Sitemap location
+Sitemap: https://benson4utah.com/sitemap.xml
+
+# Allow all crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
